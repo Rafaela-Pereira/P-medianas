@@ -1,0 +1,27 @@
+library(ggplot2)
+set.seed(1)
+x<-runif(30,0,50)
+y<-runif(30,0,50)
+n<-length(x)
+ponto<-matrix(c(x,y),ncol=2)
+plot(ponto,cex=1.2,lwd=2)
+p=3
+
+###################################################################################
+#                      função que calcula a distância de um ponto a varios pontos
+################################################################################
+CalculaDistancia<-function(pontoA,cjtPontos)
+{ m<-dim(cjtPontos)[1]
+distancias<-c()
+for( i in 1:m)
+{
+  distancias[i]<-dist(rbind(pontoA,cjtPontos[i,]))
+}
+return(distancias)
+}
+##################################################################################
+#               soluções iniciais
+#-------------------------------------------------------------------------------
+#solução inicial por sorteio
+set.seed(1)
+medianasAleatoria<-sort(sample(1:n,p))
