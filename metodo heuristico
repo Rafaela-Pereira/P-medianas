@@ -25,3 +25,93 @@ return(distancias)
 #solução inicial por sorteio
 set.seed(1)
 medianasAleatoria<-sort(sample(1:n,p))
+
+#solução icial: pontos mais próximos da média
+media<-c(mean(x),mean(y))
+D1<-CalculaDistancia(media, ponto)
+MedianasCentral<-c(match(D1[rank(D1)==c(1,2)],D1), 
+                   match(D1[rank(D1)==3],D1))
+
+#pontos mais distantes
+D2<-CalculaDistancia(ponto[match(max(D1),D1),],ponto)
+D3<-CalculaDistancia(ponto[match(max(D2),D2),],ponto)
+MedianasDistantes<-c(match(max(D1),D1),match(max(D2),D2),
+                     match(D3[rank(D3)==29],D3))
+
+
+#------------------função que calcula a melhor mediana do grupo--------------------
+MelhorMedianadoGrupo<-function(grupo)
+{ n<-dim(grupo)[1]
+MelhorMediana<-c()
+for(i in 1:n)
+{
+  MelhorMediana[i]<-sum(CalculaDistancia(grupo[i,],grupo))
+}
+return((MelhorMediana))
+}
+#------------------------------------------------------------------------------------
+#                  Algoritmo eurístico
+#-------------------------------------------------------------------------------------
+medianaAnterior<-c(1,2,3)
+medianaAtual<-sort(MedianasCentral)                    #outras entradas:MedianasAleatoria,MedianasDistantes
+
+while(sum(abs(medianaAtual-medianaAnterior))!= 0)
+{
+medianaAnterior<-medianaAtual
+medianasSol<-medianaAnterior
+
+# calcula as distancias aos pontos
+distMediana1<-CalculaDistancia(ponto[medianasSol[1],],ponto)
+distMediana2<-CalculaDistancia(ponto[medianasSol[2],],ponto)
+distMediana3<-CalculaDistancia(ponto[medianasSol[3],],ponto)
+
+MatrizDistancias<-matrix(c(distMediana1,distMediana2,distMediana3),ncol=3)
+
+medianaEscolhida<-c() #aloca os pontos a mediana mais próxima
+for(i in 1:n)
+{
+  medianaEscolhida[i]<- match(min(MatrizDistancias[i,]),MatrizDistancias[i,])
+}
+
+#separa os grupos por mediana
+Solucao<-data.frame(x,y,medianaEscolhida);  
+Mediana1<-subset(Solucao, Solucao$medianaEscolhida==1)[,-3]
+Mediana2<-subset(Solucao, Solucao$medianaEscolhida==2)[,-3]
+Mediana3<-subset(Solucao, Solucao$medianaEscolhida==3)[,-3]
+
+#escolhe novas medianas para o grupo
+M1<-Mediana1[order(MelhorMedianadoGrupo(Mediana1))[1],] 
+M2<-Mediana2[order(MelhorMedianadoGrupo(Mediana2))[1],]
+M3<-Mediana3[order(MelhorMedianadoGrupo(Mediana3))[1],]
+
+#vetor mediana recebe as atualizações
+a<-match(M1,ponto)[1] 
+b<-match(M2,ponto)[1]
+c<-match(M3,ponto)[1]
+
+medianaAtual<-c(a,b,c)
+}
+medianaAtual;
+
+#Calcula a distância total para a solução final
+DistTotal<-sum(CalculaDistancia(c(x[medianaAtual[1]],y[medianaAtual[1]]),Mediana1))+
+  sum(CalculaDistancia(c(x[medianaAtual[2]],y[medianaAtual[2]]),Mediana2))+
+  sum(CalculaDistancia(c(x[medianaAtual[3]],y[medianaAtual[3]]),Mediana3))
+
+#-------------------------------------------------------------------------------------
+#                          gráfico
+#--------------------------------------------------------------------------------------
+library(ggplot2)
+
+graf<-data.frame(x,y,Medianas=as.factor(medianaEscolhida))
+
+ggplot(graf, aes(x = x, y = y,fill=Medianas))+
+geom_point(aes(color=Medianas),size=2)+
+scale_colour_discrete(labels=c("15","2","24"))+ #alterar legenda quando necessário
+scale_fill_discrete(guide=FALSE)+
+geom_point(aes(x= x[medianaAtual[1]],y=y[medianaAtual[1]]),color="red",size=4)+
+geom_point(aes(x= x[medianaAtual[2]],y=y[medianaAtual[2]]),color="green",size=4)+
+geom_point(aes(x= x[medianaAtual[3]],y=y[medianaAtual[3]]),color="blue",size=4) +
+theme(axis.title.x = element_text(size=16),axis.title.y = element_text(size=16),
+      axis.text.x  = element_text(size=16),axis.text.y = element_text(size=16),
+      legend.text = element_text(size = 15),legend.title=element_text(size=15))
